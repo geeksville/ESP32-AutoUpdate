@@ -1,0 +1,22 @@
+{
+  "name": "ESP32-AutoUpdate",
+  "keywords": "esp32, update",
+  "description": "Making ESP32 web software update easy with S3 buckets",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/geeksville/ESP32-AutoUpdate.git"
+  },
+  "authors":
+  [
+    {
+      "name": "Kevin Hester",
+      "email": "kevinh@geeksville.com",
+      "url": "https://github.com/geeksville",
+      "maintainer": true
+    }
+  ],
+  "version": "0.1.0",
+  "frameworks": "arduino",
+  "platforms": "espressif32"
+}

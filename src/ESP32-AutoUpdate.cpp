@@ -5,21 +5,21 @@
 #include "esp_partition.h"
 #include "esp_ota_ops.h"
 
-
-
-
-void dump_part(const esp_partition_t *p) {
+void dump_part(const esp_partition_t *p)
+{
     printf("type %d, subtype %d, address %x, label %s\n", p->type, p->subtype, p->address, p->label);
+
+#if 0
     uint8_t sha256[32];
     esp_partition_get_sha256(p, sha256);
     printf("sha256: ");
-    for(int i = 0; i < sizeof(sha256); i++)
+    for (int i = 0; i < sizeof(sha256); i++)
         printf("%02x", sha256[i]);
+#endif
 
     printf("\n");
 
-
-    #if 0
+#if 0
     esp_partition_pos_t pos;
     pos.offset = p->address;
     pos.size = p->size;
@@ -36,13 +36,15 @@ void dump_part(const esp_partition_t *p) {
         md5.calculate();
         printf("md5: %s\n", md5.toString().c_str());
     }
-    #endif
+#endif
 
     printf("\n");
 }
 
-void dump_parts(esp_partition_iterator_t i) {
-    while(i) {
+void dump_parts(esp_partition_iterator_t i)
+{
+    while (i)
+    {
         const esp_partition_t *p = esp_partition_get(i);
         dump_part(p);
         i = esp_partition_next(i);
@@ -50,18 +52,17 @@ void dump_parts(esp_partition_iterator_t i) {
     // esp_partition_iterator_release(i);
 }
 
-/**
-   We look for update control files at this location (*.ucf)
- */
-AutoUpdate::AutoUpdate(String baseURL) : baseURL(baseURL) {
-#if 0
+void dump_partitions()
+{
     const esp_partition_t *p = esp_ota_get_running_partition();
 
-    if(p) {
+    if (p)
+    {
         printf("running partition: ");
         dump_part(p);
     }
 
+#if 1
     printf("app partitions:\n");
     dump_parts(esp_partition_find(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_ANY, NULL));
     printf("data partitions:\n");
@@ -85,26 +86,20 @@ AutoUpdate::AutoUpdate(String baseURL) : baseURL(baseURL) {
        type 1, subtype 130, address 291000, label spiffs
        sha256: 9bc6592295ad5b158db06e2662df7a9cb4788b3b9e0527092d7bb12760b191b4
      */
+}
 
-/*  HTTPClient http;
-                        http.setReuse(true); // FIXME try to reuse once we also fetch by serial num
-                        http.begin(baseURL + ""; // FIXME, we assume all msgs are urls
-                        int httpCode = http.GET();
-                        Serial.printf("HTTP get %d\n", httpCode);
-                        if(httpCode == HTTP_CODE_OK && http.getSize() > 0) {
-                        String payload = http.getString();
-                        // int len = http.getSize();
-                        }
-
-                        http.end();
-
+/**
+   We look for update control files at this location (*.ucf)
  */
+AutoUpdate::AutoUpdate(String baseURL) : baseURL(baseURL)
+{
 }
 
 /**
    Return true if the server says an update is available
  */
-bool AutoUpdate::isUpdateAvailable() {
+bool AutoUpdate::isUpdateAvailable()
+{
     // running sha256 digest https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/storage/spi_flash.html#_CPPv224esp_partition_get_sha256PK15esp_partition_tP7uint8_t
     // running image md5 via https://www.reddit.com/r/esp32/comments/9n9ujq/any_way_to_get_md5_of_currently_running_firmware/
     return false;
@@ -113,20 +108,22 @@ bool AutoUpdate::isUpdateAvailable() {
 /**
    if an update is needed or force is true, do an update
  */
-void AutoUpdate::update(bool force) {
+void AutoUpdate::update(bool force)
+{
     // use streaming api to download https://github.com/espressif/arduino-esp32/blob/master/libraries/HTTPClient/examples/StreamHttpClient/StreamHttpClient.ino
 
-    if(!force)
+    if (!force)
         return; // For the time being we only support force - FIXME
 
-    const String fileURL =  baseURL + ".bin";
+    const String fileURL = baseURL + ".bin";
     Serial.printf("Starting an update from %s\n", fileURL.c_str());
     WiFiClient client;
     HTTPClient http;
     http.begin(client, fileURL); // FIXME, we assume all msgs are urls
     int httpCode = http.GET();
     Serial.printf("HTTP get %d\n", httpCode);
-    if(httpCode == HTTP_CODE_OK && http.getSize() > 0) {
+    if (httpCode == HTTP_CODE_OK && http.getSize() > 0)
+    {
         // String payload = http.getString(); // This string can be enormous
         int len = http.getSize();
 
@@ -136,33 +133,44 @@ void AutoUpdate::update(bool force) {
         bool canBegin = Update.begin(len);
 
         // If yes, begin
-        if (canBegin) {
+        if (canBegin)
+        {
             Serial.println("Begin OTA. This may take a minute to complete, please wait.");
             // No activity would appear on the Serial monitor
             // So be patient. This may take 2 - 5mins to complete
             size_t written = Update.writeStream(http.getStream());
 
-            if (written == len) {
+            if (written == len)
+            {
                 Serial.println("Written successfully");
-            } else {
-                Serial.println("Written only : " + String(written) + "/" + String(len) );
+            }
+            else
+            {
+                Serial.println("Written only : " + String(written) + "/" + String(len));
                 // retry??
                 // execOTA();
             }
 
-            if (Update.end()) {
+            if (Update.end())
+            {
                 Serial.println("OTA done!");
-                if (Update.isFinished()) {
+                if (Update.isFinished())
+                {
                     Serial.println("Update successfully completed. Rebooting.");
                     ESP.restart();
-                } else {
+                }
+                else
+                {
                     Serial.println("Update not finished? Something went wrong!");
                 }
-            } else {
+            }
+            else
+            {
                 Serial.println("Error Occurred. Error #: " + String(Update.getError()));
             }
         }
-        else {
+        else
+        {
             Serial.println("Not enough space to begin OTA");
         }
     }
@@ -173,16 +181,15 @@ void AutoUpdate::update(bool force) {
    Something is really wrong with this appload, force a rollback to the previous version (if possible).
    If this routine succeeds it will not return
  */
-void AutoUpdate::doRollback() {
-
+void AutoUpdate::doRollback()
+{
 }
 
 /** Tell the upgrader that the currently running appload is good in all important ways and further failures should not trigger a rollback
  */
-void AutoUpdate::declareSuccess() {
-
+void AutoUpdate::declareSuccess()
+{
 }
-
 
 #if 0
 openssl genrsa -out private.key 2048
